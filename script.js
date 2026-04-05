@@ -229,10 +229,10 @@ function backgroundDecorationsMarkup() {
       <svg class="bg-sketch" style="top: 22%; right: 3%; width: 70px; height: 90px; opacity: 0.065;" viewBox="0 0 70 90" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M35 85 L35 20" stroke="#3c2a10" stroke-width="0.8"></path><path d="M35 60 Q20 50 15 35 Q28 45 35 42 Q42 45 55 35 Q50 50 35 60Z" stroke="#3c2a10" stroke-width="0.7" fill="rgba(60,42,16,0.04)"></path><path d="M35 38 Q22 28 18 15 Q30 28 35 26 Q40 28 52 15 Q48 28 35 38Z" stroke="#3c2a10" stroke-width="0.6" fill="rgba(60,42,16,0.03)"></path><ellipse cx="35" cy="16" rx="4" ry="6" stroke="#3c2a10" stroke-width="0.5"></ellipse></svg>
       <svg class="bg-sketch" style="top: 55%; left: 2%; width: 65px; height: 65px; opacity: 0.06;" viewBox="0 0 65 65" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="32" cy="34" rx="8" ry="12" stroke="#3c2a10" stroke-width="0.7" fill="rgba(60,42,16,0.03)"></ellipse><ellipse cx="32" cy="26" rx="5" ry="5" stroke="#3c2a10" stroke-width="0.6" fill="rgba(60,42,16,0.03)"></ellipse><line x1="30" y1="30" x2="18" y2="22" stroke="#3c2a10" stroke-width="0.5"></line><line x1="30" y1="34" x2="16" y2="34" stroke="#3c2a10" stroke-width="0.5"></line><line x1="30" y1="38" x2="18" y2="46" stroke="#3c2a10" stroke-width="0.5"></line><line x1="34" y1="30" x2="46" y2="22" stroke="#3c2a10" stroke-width="0.5"></line><line x1="34" y1="34" x2="48" y2="34" stroke="#3c2a10" stroke-width="0.5"></line><line x1="34" y1="38" x2="46" y2="46" stroke="#3c2a10" stroke-width="0.5"></line><line x1="30" y1="22" x2="22" y2="14" stroke="#3c2a10" stroke-width="0.4"></line><line x1="34" y1="22" x2="42" y2="14" stroke="#3c2a10" stroke-width="0.4"></line><circle cx="22" cy="14" r="1" fill="#3c2a10" opacity="0.3"></circle><circle cx="42" cy="14" r="1" fill="#3c2a10" opacity="0.3"></circle></svg>
       <svg class="bg-sketch" style="top: 75%; right: 4%; width: 90px; height: 70px; opacity: 0.055;" viewBox="0 0 90 70" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 60 Q25 45 40 40 Q55 35 70 25 Q75 20 80 12" stroke="#3c2a10" stroke-width="0.9" fill="none"></path><path d="M40 40 Q32 30 28 20" stroke="#3c2a10" stroke-width="0.6" fill="none"></path><path d="M55 35 Q60 28 58 18" stroke="#3c2a10" stroke-width="0.6" fill="none"></path><circle cx="28" cy="20" r="3.5" stroke="#3c2a10" stroke-width="0.5" fill="rgba(60,42,16,0.06)"></circle><circle cx="25" cy="15" r="3.5" stroke="#3c2a10" stroke-width="0.5" fill="rgba(60,42,16,0.06)"></circle><circle cx="32" cy="14" r="3.5" stroke="#3c2a10" stroke-width="0.5" fill="rgba(60,42,16,0.06)"></circle><circle cx="58" cy="18" r="3" stroke="#3c2a10" stroke-width="0.5" fill="rgba(60,42,16,0.06)"></circle><circle cx="55" cy="13" r="3" stroke="#3c2a10" stroke-width="0.5" fill="rgba(60,42,16,0.06)"></circle></svg>
-      <div class="page-annotation" style="top: 14%; left: 9%; transform: rotate(-2deg); font-size: 0.68rem;">см. также: табл. XLIV</div>
-      <div class="page-annotation" style="top: 42%; right: 8%; transform: rotate(1.5deg); font-size: 0.60rem;">ср. т. III, стр. 217</div>
-      <div class="page-annotation" style="top: 68%; left: 5%; transform: rotate(-1deg); font-size: 0.65rem;">✓ подтверждено — авг. 1889</div>
-      <div class="page-annotation" style="top: 85%; right: 10%; transform: rotate(2deg); font-size: 0.58rem;">? уточнить среду</div>
+      <div class="page-annotation" style="top: 14%; left: 9%; transform: rotate(-2deg); font-size: 0.68rem;">флора Приморья: цифровая коллекция</div>
+      <div class="page-annotation" style="top: 42%; right: 8%; transform: rotate(1.5deg); font-size: 0.60rem;">маршрут: юг Сихотэ-Алиня</div>
+      <div class="page-annotation" style="top: 68%; left: 5%; transform: rotate(-1deg); font-size: 0.65rem;">✓ верифицировано по гербарным данным</div>
+      <div class="page-annotation" style="top: 85%; right: 10%; transform: rotate(2deg); font-size: 0.58rem;">экосистема: лес, луг, побережье</div>
     </div>
   `;
 }
@@ -445,15 +445,18 @@ function renderShell() {
         <div class="corner-deco corner-deco-tl" aria-hidden="true">${cornerDecoMarkup()}</div>
         <div class="corner-deco corner-deco-tr" aria-hidden="true">${cornerDecoMarkup()}</div>
         <div class="header-stamp" aria-hidden="true">
-          <span>Основано</span>
-          <span style="font-size: 0.7rem; font-weight: bold; display: block; margin-top: 2px;">MDCCCLXXXV</span>
-          <span>Королевское</span>
-          <span>Ботаническое</span>
-          <span>Общество</span>
+          <span>Научный фонд</span>
+          <span style="font-size: 0.7rem; font-weight: bold; display: block; margin-top: 2px;">FEFU</span>
+          <span>Дальневосточный</span>
+          <span>Федеральный</span>
+          <span>Университет</span>
         </div>
-        <p class="header-eyebrow">Королевское ботаническое общество — Том IV, № 12</p>
-        <h1 class="header-title">Гербарий Исследователя</h1>
-        <p class="header-subtitle">Собрание ботанических образцов и полевых наблюдений</p>
+        <p class="header-eyebrow">Дальневосточный федеральный университет · Электронная ботаническая коллекция</p>
+        <h1 class="header-title">
+          <span class="header-title-main">Цифровой Гербарий</span>
+          <span class="header-title-sub">Приморского края</span>
+        </h1>
+        <p class="header-subtitle">Каталог растений Приморья с гербарными листами, местами находок и описанием среды</p>
       </header>
 
       <nav class="herb-nav-wrapper" aria-label="Главная навигация" id="navTabs"></nav>
@@ -466,7 +469,7 @@ function renderShell() {
             class="search-input"
             id="searchInput"
             type="text"
-            placeholder="например: Rosa canina, Lavender…"
+            placeholder="например: лимонник, Rhododendron, Тернейский район…"
             aria-label="Поиск по образцам растений"
           />
           <span class="search-icon" aria-hidden="true">🔍</span>
@@ -476,12 +479,12 @@ function renderShell() {
 
       <div class="herb-main-layout">
         <aside class="herb-sidebar" aria-label="Фильтр по категориям">
-          <p class="sidebar-heading">Указатель по категориям</p>
+          <p class="sidebar-heading">Разделы коллекции</p>
           <div id="categoryTabs"></div>
           <div class="sidebar-divider" aria-hidden="true"></div>
           <p class="sidebar-note">
-            "Natura nihil frustra facit."<br />
-            <span style="font-size: 0.76rem; opacity: 0.7;">— Аристотель</span>
+            "Растительное разнообразие Приморья требует точной фиксации и бережного изучения."<br />
+            <span style="font-size: 0.76rem; opacity: 0.7;">— цифровой гербарный принцип</span>
           </p>
           <div class="sidebar-divider" aria-hidden="true"></div>
           <div class="sidebar-stat">
@@ -514,8 +517,8 @@ function renderShell() {
 
       <footer class="herb-footer">
         <div class="footer-flourish" aria-hidden="true">✦ ✧ ✦</div>
-        <p class="footer-text">Гербарий Исследователя — Издание Королевского ботанического общества</p>
-        <p class="footer-edition"><em>Четвёртое издание, MDCCCLXXXIX &nbsp;·&nbsp; Все образцы подтверждены полевой перепиской</em></p>
+        <p class="footer-text">Цифровой Гербарий Приморского края — проект Дальневосточного федерального университета</p>
+        <p class="footer-edition"><em>Электронное издание &nbsp;·&nbsp; Гербарные образцы, полевые наблюдения и локальные данные по флоре региона</em></p>
         <svg aria-hidden="true" viewBox="0 0 300 40" style="width: 280px; height: 36px; margin: 14px auto 0px; display: block; opacity: 0.18;" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M150 20 Q130 10 110 15 Q90 20 70 12 Q50 5 30 15 Q15 22 5 18" stroke="#5c4008" stroke-width="1"></path>
           <path d="M150 20 Q170 10 190 15 Q210 20 230 12 Q250 5 270 15 Q285 22 295 18" stroke="#5c4008" stroke-width="1"></path>

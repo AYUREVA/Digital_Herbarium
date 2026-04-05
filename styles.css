@@ -242,6 +242,19 @@ body::after {
   position: relative;
 }
 
+.header-title-main,
+.header-title-sub {
+  display: block;
+}
+
+.header-title-sub {
+  font-size: clamp(1.15rem, 2.5vw, 1.9rem);
+  line-height: 1;
+  letter-spacing: 0.03em;
+  margin-top: 6px;
+  opacity: 0.82;
+}
+
 /* Ink-scratch underline effect */
 .header-title::after {
   content: '〜';
