@@ -1470,6 +1470,15 @@ body::after {
   line-height: 1.4;
 }
 
+.archive-field input:focus,
+.archive-field select:focus,
+.archive-field textarea:focus,
+.archive-file-input:focus {
+  outline: none;
+  border-color: rgba(90,102,50,0.55);
+  box-shadow: 0 0 0 3px rgba(122,140,66,0.12);
+}
+
 .archive-field textarea {
   resize: none;
 }
@@ -1488,6 +1497,17 @@ body::after {
   border: 1px dashed rgba(139,105,20,0.34);
   border-radius: 10px;
   background: rgba(245,236,214,0.62);
+}
+
+.archive-file-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid rgba(139,105,20,0.24);
+  border-radius: 8px;
+  background: rgba(255,250,238,0.78);
+  color: rgba(74,53,32,0.9);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
 }
 
 .archive-upload-title {
@@ -1515,6 +1535,7 @@ body::after {
   font-size: 0.68rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+  cursor: pointer;
 }
 
 .archive-upload-button,
@@ -1535,6 +1556,55 @@ body::after {
   justify-content: flex-end;
   gap: 10px;
   margin-top: 6px;
+}
+
+.archive-status {
+  position: relative;
+  z-index: 2;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.archive-status-error {
+  border: 1px solid rgba(139,58,42,0.28);
+  background: rgba(139,58,42,0.10);
+  color: #6f271c;
+}
+
+.archive-status-success {
+  border: 1px solid rgba(90,102,50,0.28);
+  background: rgba(90,102,50,0.10);
+  color: #425122;
+}
+
+.archive-status-info {
+  max-width: 420px;
+  margin: 36px auto;
+  text-align: center;
+  border: 1px solid rgba(139,105,20,0.24);
+  background: rgba(245,236,214,0.72);
+  color: var(--ink-faded);
+}
+
+.plants-loading-banner {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 5300;
+  padding: 10px 14px;
+  border: 1px solid rgba(139,105,20,0.24);
+  border-radius: 999px;
+  background: rgba(245,236,214,0.92);
+  box-shadow: 0 10px 24px rgba(44,31,14,0.16);
+  color: var(--ink-faded);
+  font-family: var(--font-typewriter);
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  pointer-events: none;
 }
 
 @media (max-width: 640px) {
