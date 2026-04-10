@@ -173,6 +173,14 @@ const state = {
   isSubmittingPlant: false,
   formError: "",
   formSuccess: "",
+  session: null,
+  user: null,
+  isAuthReady: false,
+  authFormOpen: false,
+  authMode: "signin",
+  isAuthSubmitting: false,
+  authError: "",
+  authSuccess: "",
 };
 
 const root = document.getElementById("root");
@@ -247,6 +255,29 @@ function normalizePlants(plants) {
 
 function getPlants() {
   return state.plants;
+}
+
+function isAuthenticated() {
+  return Boolean(state.user);
+}
+
+function getAuthRedirectUrl() {
+  return `${window.location.origin}${window.location.pathname}`;
+}
+
+function setAuthState(session) {
+  state.session = session;
+  state.user = session?.user ?? null;
+}
+
+function clearAuthMessages() {
+  state.authError = "";
+  state.authSuccess = "";
+}
+
+function clearPlantMessages() {
+  state.formError = "";
+  state.formSuccess = "";
 }
 
 function mergePlants(primaryPlants, secondaryPlants) {
@@ -353,6 +384,104 @@ function renderStatusMessage() {
   return "";
 }
 
+function renderAuthStatusMessage() {
+  if (state.authError) {
+    return `<div class="archive-status archive-status-error" role="alert">${escapeHtml(state.authError)}</div>`;
+  }
+
+  if (state.authSuccess) {
+    return `<div class="archive-status archive-status-success" role="status">${escapeHtml(state.authSuccess)}</div>`;
+  }
+
+  return "";
+}
+
+function renderAuthControls() {
+  if (!state.isAuthReady) {
+    return `
+      <div class="auth-controls-shell">
+        <span class="auth-inline-note">Проверка входа...</span>
+      </div>
+    `;
+  }
+
+  if (isAuthenticated()) {
+    const email = escapeHtml(state.user.email ?? "Пользователь");
+    const statusMarkup = state.authSuccess
+      ? `<span class="auth-inline-note auth-inline-note-success">${escapeHtml(state.authSuccess)}</span>`
+      : "";
+
+    return `
+      <div class="auth-controls-shell auth-controls-shell-signed">
+        <div class="auth-user-chip">
+          <span class="auth-user-label">Вошли как</span>
+          <strong>${email}</strong>
+        </div>
+        <button class="auth-secondary-button" id="signOutButton" type="button">Выйти</button>
+        ${statusMarkup}
+      </div>
+    `;
+  }
+
+  const statusMarkup = state.authSuccess
+    ? `<span class="auth-inline-note auth-inline-note-success">${escapeHtml(state.authSuccess)}</span>`
+    : state.authError
+      ? `<span class="auth-inline-note auth-inline-note-error">${escapeHtml(state.authError)}</span>`
+      : `<span class="auth-inline-note">Чтобы добавлять растения, войдите в аккаунт.</span>`;
+
+  return `
+    <div class="auth-controls-shell">
+      <button class="auth-primary-button" id="openAuthButton" type="button">Вход / Регистрация</button>
+      ${statusMarkup}
+    </div>
+  `;
+}
+
+function renderAuthModal() {
+  if (!state.authFormOpen) {
+    return '<div class="archive-overlay" id="authOverlay" aria-hidden="true"></div>';
+  }
+
+  const isSignIn = state.authMode === "signin";
+
+  return `
+    <div class="archive-overlay open" id="authOverlay" role="dialog" aria-modal="true" aria-label="Форма входа и регистрации">
+      <div class="archive-card auth-card">
+        <button class="archive-close" id="authClose" aria-label="Закрыть">✕</button>
+        <div class="archive-tape archive-tape-left"></div>
+        <div class="archive-tape archive-tape-right"></div>
+
+        <p class="archive-eyebrow">Доступ к форме пополнения коллекции</p>
+        <h2 class="archive-title">${isSignIn ? "Войти в аккаунт" : "Создать аккаунт"}</h2>
+        <p class="archive-subtitle">${isSignIn ? "Войдите по email и паролю, чтобы добавлять новые растения." : "Создайте аккаунт по email и паролю. После подтверждения почты вы сможете войти и пополнять коллекцию."}</p>
+        ${renderAuthStatusMessage()}
+
+        <div class="auth-switcher" role="tablist" aria-label="Режим авторизации">
+          <button class="auth-switcher-button${isSignIn ? " active" : ""}" id="switchToSignIn" type="button" role="tab" aria-selected="${String(isSignIn)}">Вход</button>
+          <button class="auth-switcher-button${!isSignIn ? " active" : ""}" id="switchToSignUp" type="button" role="tab" aria-selected="${String(!isSignIn)}">Регистрация</button>
+        </div>
+
+        <form class="archive-form" id="authForm" aria-label="Форма авторизации">
+          <label class="archive-field">
+            <span class="archive-label">Email</span>
+            <input name="email" type="email" placeholder="botanica@example.com" autocomplete="email" required />
+          </label>
+
+          <label class="archive-field">
+            <span class="archive-label">Пароль</span>
+            <input name="password" type="password" placeholder="Не менее 6 символов" minlength="6" autocomplete="${isSignIn ? "current-password" : "new-password"}" required />
+          </label>
+
+          <div class="archive-actions">
+            <button type="button" class="archive-secondary" id="authCloseSecondary">Закрыть</button>
+            <button type="submit" class="archive-primary"${state.isAuthSubmitting ? " disabled" : ""}>${state.isAuthSubmitting ? "Подождите..." : isSignIn ? "Войти" : "Создать аккаунт"}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+}
+
 function renderPlantCard(plant) {
   const plantId = String(plant.id ?? "");
   const marginTop = Math.abs(
@@ -449,7 +578,7 @@ function renderLightbox(plant) {
 }
 
 function renderAddPlantModal() {
-  if (!state.addFormOpen) {
+  if (!state.addFormOpen || !isAuthenticated()) {
     return '<div class="archive-overlay" id="addPlantOverlay" aria-hidden="true"></div>';
   }
 
@@ -462,7 +591,7 @@ function renderAddPlantModal() {
 
         <p class="archive-eyebrow">Новая карточка коллекции</p>
         <h2 class="archive-title">Добавить в коллекцию</h2>
-        <p class="archive-subtitle">Заполните карточку, приложите фотографию, и растение сразу появится в коллекции. Для учебного проекта форма открыта без регистрации, поэтому данные лучше заполнять аккуратно.</p>
+        <p class="archive-subtitle">Заполните карточку, приложите фотографию, и растение появится в коллекции от имени авторизованного пользователя.</p>
         ${renderStatusMessage()}
 
         <form class="archive-form" id="addPlantForm" aria-label="Форма добавления растения">
@@ -575,6 +704,94 @@ async function fetchPlants() {
   updateLightbox();
 }
 
+async function initializeAuth() {
+  const { data, error } = await supabase.auth.getSession();
+
+  if (error) {
+    console.error("Не удалось получить текущую сессию:", error);
+  }
+
+  setAuthState(data?.session ?? null);
+  state.isAuthReady = true;
+  updateAuthControls();
+  updateAddPlantModal();
+}
+
+async function handleAuthSubmit(event) {
+  event.preventDefault();
+
+  if (state.isAuthSubmitting) {
+    return;
+  }
+
+  clearAuthMessages();
+  state.isAuthSubmitting = true;
+  updateAuthModal();
+
+  const formData = new FormData(event.currentTarget);
+  const email = String(formData.get("email") ?? "").trim();
+  const password = String(formData.get("password") ?? "").trim();
+
+  try {
+    if (state.authMode === "signup") {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: getAuthRedirectUrl(),
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.session) {
+        clearAuthMessages();
+        state.authFormOpen = false;
+      } else {
+        state.authSuccess = "Аккаунт создан. Проверьте почту и подтвердите регистрацию, затем войдите на сайт.";
+      }
+    } else {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      clearAuthMessages();
+      state.authFormOpen = false;
+    }
+  } catch (error) {
+    state.authError = error instanceof Error ? error.message : "Не удалось выполнить авторизацию.";
+  } finally {
+    state.isAuthSubmitting = false;
+    updateAuthModal();
+    updateAuthControls();
+  }
+}
+
+async function handleSignOut() {
+  clearAuthMessages();
+  clearPlantMessages();
+
+  const { error } = await supabase.auth.signOut();
+
+  if (error) {
+    state.authError = error.message;
+  } else {
+    state.authSuccess = "Вы вышли из аккаунта.";
+    state.addFormOpen = false;
+  }
+
+  updateAuthControls();
+  updateAuthModal();
+  updateAddPlantModal();
+}
+
 async function uploadPlantImage(file, plantName) {
   const extension = file.name.includes(".") ? file.name.split(".").pop().toLowerCase() : "jpg";
   const fileName = `${Date.now()}-${slugify(plantName)}-${crypto.randomUUID()}.${extension}`;
@@ -639,6 +856,16 @@ function validateSelectedFile(file) {
 
 async function handleAddPlantSubmit(event) {
   event.preventDefault();
+
+  if (!isAuthenticated()) {
+    state.addFormOpen = false;
+    state.authMode = "signin";
+    state.authFormOpen = true;
+    state.authError = "Сначала войдите в аккаунт.";
+    updateAddPlantModal();
+    updateAuthModal();
+    return;
+  }
 
   if (state.isSubmittingPlant) {
     return;
@@ -738,6 +965,7 @@ function renderShell() {
     ${backgroundDecorationsMarkup()}
     <div id="lightboxMount"></div>
     <div id="addPlantMount"></div>
+    <div id="authMount"></div>
     <div id="plantsLoadingNotice"></div>
     <div class="herbarium-wrapper">
       <header class="herb-header">
@@ -773,6 +1001,7 @@ function renderShell() {
           />
           <span class="search-icon" aria-hidden="true">🔍</span>
         </div>
+        <div id="authControls"></div>
         <button class="collection-add-button" id="openAddPlantButton" type="button">Добавить в коллекцию</button>
       </div>
 
@@ -947,6 +1176,95 @@ function updateLightbox() {
   }
 }
 
+function updateAuthControls() {
+  const authControls = document.getElementById("authControls");
+
+  if (!authControls) {
+    return;
+  }
+
+  authControls.innerHTML = renderAuthControls();
+
+  const openButton = document.getElementById("openAuthButton");
+  const signOutButton = document.getElementById("signOutButton");
+
+  if (openButton) {
+    openButton.addEventListener("click", () => {
+      clearAuthMessages();
+      state.authMode = "signin";
+      state.authFormOpen = true;
+      updateAuthModal();
+    });
+  }
+
+  if (signOutButton) {
+    signOutButton.addEventListener("click", handleSignOut);
+  }
+}
+
+function updateAuthModal() {
+  const authMount = document.getElementById("authMount");
+
+  if (!authMount) {
+    return;
+  }
+
+  authMount.innerHTML = renderAuthModal();
+
+  const overlay = document.getElementById("authOverlay");
+  const closeButton = document.getElementById("authClose");
+  const closeSecondary = document.getElementById("authCloseSecondary");
+  const signInButton = document.getElementById("switchToSignIn");
+  const signUpButton = document.getElementById("switchToSignUp");
+  const form = document.getElementById("authForm");
+
+  if (overlay) {
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay) {
+        state.authFormOpen = false;
+        clearAuthMessages();
+        updateAuthModal();
+      }
+    });
+  }
+
+  if (closeButton) {
+    closeButton.addEventListener("click", () => {
+      state.authFormOpen = false;
+      clearAuthMessages();
+      updateAuthModal();
+    });
+  }
+
+  if (closeSecondary) {
+    closeSecondary.addEventListener("click", () => {
+      state.authFormOpen = false;
+      clearAuthMessages();
+      updateAuthModal();
+    });
+  }
+
+  if (signInButton) {
+    signInButton.addEventListener("click", () => {
+      state.authMode = "signin";
+      clearAuthMessages();
+      updateAuthModal();
+    });
+  }
+
+  if (signUpButton) {
+    signUpButton.addEventListener("click", () => {
+      state.authMode = "signup";
+      clearAuthMessages();
+      updateAuthModal();
+    });
+  }
+
+  if (form) {
+    form.addEventListener("submit", handleAuthSubmit);
+  }
+}
+
 function updateAddPlantModal() {
   const addPlantMount = document.getElementById("addPlantMount");
   addPlantMount.innerHTML = renderAddPlantModal();
@@ -1017,8 +1335,17 @@ function bindEvents() {
   });
 
   document.getElementById("openAddPlantButton").addEventListener("click", () => {
-    state.formError = "";
-    state.formSuccess = "";
+    clearPlantMessages();
+
+    if (!isAuthenticated()) {
+      clearAuthMessages();
+      state.authMode = "signin";
+      state.authFormOpen = true;
+      state.authSuccess = "Для добавления растения сначала войдите в аккаунт.";
+      updateAuthModal();
+      return;
+    }
+
     state.addFormOpen = true;
     updateAddPlantModal();
   });
@@ -1086,6 +1413,11 @@ function bindEvents() {
         state.addFormOpen = false;
         updateAddPlantModal();
       }
+
+      if (state.authFormOpen) {
+        state.authFormOpen = false;
+        updateAuthModal();
+      }
     }
   });
 }
@@ -1095,8 +1427,29 @@ updateNavTabs();
 updateCategoryTabs();
 updateSidebarStats();
 updateGrid();
+updateAuthControls();
+updateAuthModal();
 updateLoadingNotice();
 updateLightbox();
 updateAddPlantModal();
 bindEvents();
+supabase.auth.onAuthStateChange((event, session) => {
+  setAuthState(session);
+  state.isAuthReady = true;
+
+  if (event === "SIGNED_IN") {
+    state.authFormOpen = false;
+    state.authError = "";
+    state.authSuccess = "Вход выполнен.";
+  }
+
+  if (event === "SIGNED_OUT") {
+    state.addFormOpen = false;
+  }
+
+  updateAuthControls();
+  updateAuthModal();
+  updateAddPlantModal();
+});
+initializeAuth();
 fetchPlants();

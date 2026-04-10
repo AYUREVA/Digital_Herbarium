@@ -490,6 +490,107 @@ body::after {
   font-size: 0.95rem;
 }
 
+.auth-controls-shell {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.auth-controls-shell-signed {
+  justify-content: flex-end;
+}
+
+.auth-primary-button,
+.auth-secondary-button {
+  padding: 10px 16px 9px;
+  border-radius: 999px;
+  font-family: var(--font-typewriter);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.auth-primary-button {
+  border: 1px solid rgba(90,102,50,0.35);
+  background: linear-gradient(135deg, rgba(125,146,82,0.92), rgba(95,113,56,0.92));
+  color: #f7f1df;
+  box-shadow: 0 3px 10px rgba(44,31,14,0.12);
+}
+
+.auth-secondary-button {
+  border: 1px solid rgba(139,105,20,0.30);
+  background: linear-gradient(135deg, rgba(245,233,204,0.98), rgba(237,224,184,0.96));
+  color: var(--ink);
+}
+
+.auth-inline-note {
+  max-width: 320px;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--ink-lighter);
+}
+
+.auth-inline-note-success {
+  color: #425122;
+}
+
+.auth-inline-note-error {
+  color: #6f271c;
+}
+
+.auth-user-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  border: 1px solid rgba(139,105,20,0.24);
+  border-radius: 14px;
+  background: rgba(245,236,214,0.70);
+  color: var(--ink);
+}
+
+.auth-user-label {
+  font-family: var(--font-typewriter);
+  font-size: 0.55rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sepia);
+}
+
+.auth-switcher {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.auth-switcher-button {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(139,105,20,0.26);
+  background: rgba(245,236,214,0.72);
+  color: var(--ink-faded);
+  font-family: var(--font-typewriter);
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.auth-switcher-button.active {
+  border-color: rgba(90,102,50,0.35);
+  background: linear-gradient(135deg, rgba(125,146,82,0.92), rgba(95,113,56,0.92));
+  color: #f7f1df;
+}
+
+.auth-card {
+  width: min(560px, 100%);
+}
+
 /* ============================================================
    MAIN LAYOUT — Content Area
    ============================================================ */
