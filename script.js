@@ -1,4 +1,15 @@
-const PLANTS = [
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const SUPABASE_URL = "https://yvadqomjkbjwngzfpegi.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_6-1pFX9O4f2BaiVQ3hkIig_lA1gp5Ch";
+const SUPABASE_BUCKET = "plants-images";
+const TAPE_VARIANTS = ["tape-yellow", "tape-blue", "tape-green", "tape-pink", "tape-clear"];
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+const LOCAL_PLANTS = [
   {
     id: 1,
     name: "Рододендрон даурский",
@@ -152,14 +163,107 @@ const CATEGORY_DEFS = [
 const NAV_TABS = ["Коллекция"];
 
 const state = {
+  plants: [...LOCAL_PLANTS],
   activeCategory: "all",
   activeTab: "Коллекция",
   searchQuery: "",
   selectedPlantId: null,
   addFormOpen: false,
+  isLoadingPlants: true,
+  isSubmittingPlant: false,
+  formError: "",
+  formSuccess: "",
 };
 
 const root = document.getElementById("root");
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function slugify(value) {
+  return String(value ?? "")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^\w\s-]/g, "")
+    .trim()
+    .replace(/[\s_-]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "plant";
+}
+
+function randomTape() {
+  return TAPE_VARIANTS[Math.floor(Math.random() * TAPE_VARIANTS.length)];
+}
+
+function formatCollectionDate(rawValue) {
+  if (!rawValue) {
+    return "";
+  }
+
+  const parsed = new Date(rawValue);
+  if (Number.isNaN(parsed.getTime())) {
+    return rawValue;
+  }
+
+  return new Intl.DateTimeFormat("ru-RU", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(parsed);
+}
+
+function normalizePlant(plant, index = 0) {
+  const source = plant ?? {};
+  const fallbackId = source.id ?? `${Date.now()}-${index}`;
+
+  return {
+    id: String(fallbackId),
+    name: source.name ?? "",
+    latin: source.latin ?? "",
+    date: source.date ?? source.collection_date ?? "",
+    category: source.category ?? "flowers",
+    image: source.image ?? source.image_url ?? "",
+    rotation: Number(source.rotation ?? ((index % 5) - 2)),
+    tapeTopLeft: source.tapeTopLeft ?? source.tape_top_left ?? randomTape(),
+    tapeTopRight: source.tapeTopRight ?? source.tape_top_right ?? randomTape(),
+    hasWaxSeal: Boolean(source.hasWaxSeal ?? source.has_wax_seal),
+    hasBadge: Boolean(source.hasBadge ?? source.has_badge ?? source.badgeText ?? source.badge_text),
+    badgeText: source.badgeText ?? source.badge_text ?? "",
+    note: source.note ?? "",
+    habitat: source.habitat ?? "",
+    collector: source.collector ?? "",
+    locale: source.locale ?? "",
+  };
+}
+
+function normalizePlants(plants) {
+  return plants.map((plant, index) => normalizePlant(plant, index));
+}
+
+function getPlants() {
+  return state.plants;
+}
+
+function mergePlants(primaryPlants, secondaryPlants) {
+  const merged = [...normalizePlants(primaryPlants), ...normalizePlants(secondaryPlants)];
+  const seen = new Set();
+
+  return merged.filter((plant) => {
+    const key = `${plant.name.toLowerCase()}|${plant.latin.toLowerCase()}|${plant.date.toLowerCase()}`;
+
+    if (seen.has(key)) {
+      return false;
+    }
+
+    seen.add(key);
+    return true;
+  });
+}
 
 function waxSealMarkup() {
   return `
@@ -237,35 +341,57 @@ function backgroundDecorationsMarkup() {
   `;
 }
 
+function renderStatusMessage() {
+  if (state.formError) {
+    return `<div class="archive-status archive-status-error" role="alert">${escapeHtml(state.formError)}</div>`;
+  }
+
+  if (state.formSuccess) {
+    return `<div class="archive-status archive-status-success" role="status">${escapeHtml(state.formSuccess)}</div>`;
+  }
+
+  return "";
+}
+
 function renderPlantCard(plant) {
-  const marginTop = Math.abs(plant.id % 3) * 6;
+  const plantId = String(plant.id ?? "");
+  const marginTop = Math.abs(
+    plantId
+      .split("")
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0) % 3,
+  ) * 6;
+  const plantName = escapeHtml(plant.name);
+  const plantLatin = escapeHtml(plant.latin);
+  const plantImage = escapeHtml(plant.image);
+  const plantDate = escapeHtml(plant.date);
+  const badgeText = escapeHtml(plant.badgeText);
 
   return `
     <div role="listitem">
       <div
         class="plant-card"
-        data-plant-id="${plant.id}"
+        data-plant-id="${escapeHtml(plantId)}"
         style="transform: rotate(${plant.rotation}deg); margin-top: ${marginTop}px;"
         role="button"
         tabindex="0"
-        aria-label="Открыть образец: ${plant.name}"
+        aria-label="Открыть образец: ${plantName}"
       >
         <div class="tape ${plant.tapeTopLeft} tape-tl"></div>
         <div class="tape ${plant.tapeTopRight} tape-tr"></div>
         <div class="polaroid">
-          ${plant.hasBadge && plant.badgeText ? `<div class="specimen-badge">${plant.badgeText}</div>` : ""}
+          ${plant.hasBadge && plant.badgeText ? `<div class="specimen-badge">${badgeText}</div>` : ""}
           <div class="polaroid-img-wrap">
-            <img src="${plant.image}" alt="${plant.name} (${plant.latin})" class="polaroid-img" loading="lazy" />
+            <img src="${plantImage}" alt="${plantName} (${plantLatin})" class="polaroid-img" loading="lazy" />
           </div>
           <div class="polaroid-caption">
-            <div class="polaroid-title">${plant.name}</div>
-            <div class="polaroid-date">${plant.date}</div>
+            <div class="polaroid-title">${plantName}</div>
+            <div class="polaroid-date">${plantDate}</div>
           </div>
           ${plant.hasWaxSeal ? waxSealMarkup() : ""}
         </div>
         <div class="paper-tag">
-          <div class="paper-tag-text">${plant.name}</div>
-          <div class="paper-tag-latin">${plant.latin}</div>
+          <div class="paper-tag-text">${plantName}</div>
+          <div class="paper-tag-latin">${plantLatin}</div>
         </div>
       </div>
     </div>
@@ -278,34 +404,43 @@ function renderLightbox(plant) {
   }
 
   const categoryLabel = getCategoryLabel(plant.category);
+  const plantName = escapeHtml(plant.name);
+  const plantLatin = escapeHtml(plant.latin);
+  const plantImage = escapeHtml(plant.image);
+  const plantDate = escapeHtml(plant.date);
+  const plantNote = escapeHtml(plant.note);
+  const plantCollector = escapeHtml(plant.collector);
+  const plantLocale = escapeHtml(plant.locale);
+  const plantHabitat = escapeHtml(plant.habitat);
+  const safeCategoryLabel = escapeHtml(categoryLabel);
 
   return `
-    <div class="lightbox-overlay open" id="lightboxOverlay" role="dialog" aria-modal="true" aria-label="Сведения об образце: ${plant.name}">
+    <div class="lightbox-overlay open" id="lightboxOverlay" role="dialog" aria-modal="true" aria-label="Сведения об образце: ${plantName}">
       <div class="lightbox-card">
         <button class="lightbox-close" id="lightboxClose" aria-label="Закрыть">✕</button>
         <div class="tape tape-yellow" style="position: absolute; width: 60px; height: 16px; top: -8px; left: 20px; transform: rotate(-8deg);"></div>
         <div class="tape tape-blue" style="position: absolute; width: 50px; height: 14px; top: -7px; right: 40px; transform: rotate(6deg);"></div>
-        <img src="${plant.image}" alt="${plant.name}" class="lightbox-img" />
-        <h2 class="lightbox-title">${plant.name}</h2>
-        <p class="lightbox-latin"><em>${plant.latin}</em> &mdash; Собрано ${plant.date}</p>
+        <img src="${plantImage}" alt="${plantName}" class="lightbox-img" />
+        <h2 class="lightbox-title">${plantName}</h2>
+        <p class="lightbox-latin"><em>${plantLatin}</em> &mdash; Собрано ${plantDate}</p>
         ${plant.hasWaxSeal ? `<div style="position: absolute; top: 80px; right: 24px; transform: rotate(8deg);">${waxSealMarkup()}</div>` : ""}
-        <p class="lightbox-body">${plant.note}</p>
+        <p class="lightbox-body">${plantNote}</p>
         <div class="lightbox-meta">
           <div class="lightbox-meta-item">
             <label>Собиратель</label>
-            <span>${plant.collector}</span>
+            <span>${plantCollector}</span>
           </div>
           <div class="lightbox-meta-item">
             <label>Местность</label>
-            <span>${plant.locale}</span>
+            <span>${plantLocale}</span>
           </div>
           <div class="lightbox-meta-item">
             <label>Среда</label>
-            <span>${plant.habitat}</span>
+            <span>${plantHabitat}</span>
           </div>
           <div class="lightbox-meta-item">
             <label>Категория</label>
-            <span>${categoryLabel}</span>
+            <span>${safeCategoryLabel}</span>
           </div>
         </div>
       </div>
@@ -327,64 +462,81 @@ function renderAddPlantModal() {
 
         <p class="archive-eyebrow">Новая карточка коллекции</p>
         <h2 class="archive-title">Добавить в коллекцию</h2>
-        <p class="archive-subtitle">Форма-плейсхолдер в стиле винтажного гербария. Она открывается для демонстрации, но ввод и сохранение пока отключены.</p>
+        <p class="archive-subtitle">Заполните карточку, приложите фотографию, и растение сразу появится в коллекции. Для учебного проекта форма открыта без регистрации, поэтому данные лучше заполнять аккуратно.</p>
+        ${renderStatusMessage()}
 
-        <form class="archive-form" aria-label="Заглушка формы добавления растения">
+        <form class="archive-form" id="addPlantForm" aria-label="Форма добавления растения">
           <label class="archive-field">
             <span class="archive-label">Название растения</span>
-            <input type="text" placeholder="Например: Рододендрон даурский" disabled />
+            <input name="name" type="text" placeholder="Например: Рододендрон даурский" minlength="3" maxlength="120" required />
           </label>
 
           <label class="archive-field">
             <span class="archive-label">Латинское название</span>
-            <input type="text" placeholder="Rhododendron dauricum L." disabled />
+            <input name="latin" type="text" placeholder="Rhododendron dauricum L." minlength="3" maxlength="160" required />
           </label>
 
           <div class="archive-grid">
             <label class="archive-field">
               <span class="archive-label">Дата сбора</span>
-              <input type="text" placeholder="28 апреля 2026 г." disabled />
+              <input name="collectionDate" type="date" required />
             </label>
 
             <label class="archive-field">
               <span class="archive-label">Категория</span>
-              <select disabled>
-                <option>Цветы</option>
+              <select name="category" required>
+                <option value="flowers">Цветы</option>
+                <option value="trees">Деревья</option>
+                <option value="ferns">Папоротники</option>
+                <option value="herbs">Травы и коренья</option>
               </select>
             </label>
           </div>
 
           <label class="archive-field">
             <span class="archive-label">Район произрастания</span>
-            <input type="text" placeholder="Приморье, Тернейский район" disabled />
+            <input name="locale" type="text" placeholder="Приморье, Тернейский район" minlength="3" maxlength="220" required />
+          </label>
+
+          <label class="archive-field">
+            <span class="archive-label">Среда произрастания</span>
+            <input name="habitat" type="text" placeholder="Смешанные леса, опушки, берега рек" minlength="3" maxlength="220" required />
           </label>
 
           <label class="archive-field">
             <span class="archive-label">Описание</span>
-            <textarea rows="5" placeholder="Краткое описание растения, среды произрастания и свойств..." disabled></textarea>
+            <textarea name="note" rows="5" placeholder="Краткое описание растения, среды произрастания и свойств..." minlength="20" maxlength="3000" required></textarea>
           </label>
 
           <div class="archive-grid">
             <label class="archive-field">
               <span class="archive-label">Собиратель</span>
-              <input type="text" placeholder="Ваше имя" disabled />
+              <input name="collector" type="text" placeholder="Ваше имя" minlength="2" maxlength="120" required />
             </label>
 
             <label class="archive-field">
               <span class="archive-label">Статус / бейдж</span>
-              <input type="text" placeholder="Редкий вид / Раннее цветение" disabled />
+              <input name="badgeText" type="text" placeholder="Редкий вид / Раннее цветение" maxlength="60" />
             </label>
           </div>
 
-          <div class="archive-upload" aria-disabled="true">
+          <label class="archive-field">
+            <span class="archive-label">Сургучная печать</span>
+            <select name="hasWaxSeal">
+              <option value="false">Без печати</option>
+              <option value="true">Добавить печать</option>
+            </select>
+          </label>
+
+          <div class="archive-upload">
             <span class="archive-upload-title">Фотография образца</span>
-            <span class="archive-upload-note">Загрузка изображения будет доступна позже</span>
-            <button type="button" class="archive-upload-button" disabled>Выбрать фото</button>
+            <span class="archive-upload-note">Файл до 5 МБ. Поддерживаются JPG, PNG, WEBP и GIF.</span>
+            <input class="archive-file-input" name="imageFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif" required />
           </div>
 
           <div class="archive-actions">
             <button type="button" class="archive-secondary" id="addPlantCloseSecondary">Закрыть</button>
-            <button type="submit" class="archive-primary" disabled>Сохранить карточку</button>
+            <button type="submit" class="archive-primary"${state.isSubmittingPlant ? " disabled" : ""}>${state.isSubmittingPlant ? "Сохранение..." : "Сохранить карточку"}</button>
           </div>
         </form>
       </div>
@@ -392,39 +544,185 @@ function renderAddPlantModal() {
   `;
 }
 
+async function fetchPlants() {
+  state.isLoadingPlants = true;
+  updateGrid();
+  updateLoadingNotice();
+
+  const { data, error } = await supabase
+    .from("plants")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Не удалось загрузить растения из Supabase:", error);
+    state.plants = normalizePlants(LOCAL_PLANTS);
+    state.isLoadingPlants = false;
+    updateCategoryTabs();
+    updateSidebarStats();
+    updateGrid();
+    updateLoadingNotice();
+    updateLightbox();
+    return;
+  }
+
+  state.plants = mergePlants(LOCAL_PLANTS, data);
+  state.isLoadingPlants = false;
+  updateCategoryTabs();
+  updateSidebarStats();
+  updateGrid();
+  updateLoadingNotice();
+  updateLightbox();
+}
+
+async function uploadPlantImage(file, plantName) {
+  const extension = file.name.includes(".") ? file.name.split(".").pop().toLowerCase() : "jpg";
+  const fileName = `${Date.now()}-${slugify(plantName)}-${crypto.randomUUID()}.${extension}`;
+  const filePath = `plants/${fileName}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from(SUPABASE_BUCKET)
+    .upload(filePath, file, {
+      cacheControl: "3600",
+      contentType: file.type,
+      upsert: false,
+    });
+
+  if (uploadError) {
+    throw new Error(`Не удалось загрузить изображение: ${uploadError.message}`);
+  }
+
+  const { data } = supabase.storage.from(SUPABASE_BUCKET).getPublicUrl(filePath);
+
+  if (!data?.publicUrl) {
+    throw new Error("Supabase не вернул публичную ссылку на изображение.");
+  }
+
+  return data.publicUrl;
+}
+
+function getPlantPayload(formData, imageUrl) {
+  const badgeText = String(formData.get("badgeText") ?? "").trim();
+
+  return {
+    name: String(formData.get("name") ?? "").trim(),
+    latin: String(formData.get("latin") ?? "").trim(),
+    collection_date: formatCollectionDate(String(formData.get("collectionDate") ?? "")),
+    category: String(formData.get("category") ?? "flowers"),
+    image_url: imageUrl,
+    note: String(formData.get("note") ?? "").trim(),
+    habitat: String(formData.get("habitat") ?? "").trim(),
+    collector: String(formData.get("collector") ?? "").trim(),
+    locale: String(formData.get("locale") ?? "").trim(),
+    badge_text: badgeText || null,
+    has_badge: Boolean(badgeText),
+    has_wax_seal: String(formData.get("hasWaxSeal") ?? "false") === "true",
+    rotation: Number(((Math.random() * 6) - 3).toFixed(1)),
+    tape_top_left: randomTape(),
+    tape_top_right: randomTape(),
+  };
+}
+
+function validateSelectedFile(file) {
+  if (!file) {
+    throw new Error("Выберите фотографию растения.");
+  }
+
+  if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+    throw new Error("Поддерживаются только изображения JPG, PNG, WEBP и GIF.");
+  }
+
+  if (file.size > MAX_FILE_SIZE_BYTES) {
+    throw new Error("Файл слишком большой. Максимальный размер: 5 МБ.");
+  }
+}
+
+async function handleAddPlantSubmit(event) {
+  event.preventDefault();
+
+  if (state.isSubmittingPlant) {
+    return;
+  }
+
+  state.formError = "";
+  state.formSuccess = "";
+  state.isSubmittingPlant = true;
+  updateAddPlantModal();
+
+  const form = event.currentTarget;
+  const formData = new FormData(form);
+  const imageFile = formData.get("imageFile");
+
+  try {
+    validateSelectedFile(imageFile);
+
+    const imageUrl = await uploadPlantImage(imageFile, formData.get("name"));
+    const payload = getPlantPayload(formData, imageUrl);
+
+    const { data, error } = await supabase
+      .from("plants")
+      .insert(payload)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Не удалось сохранить карточку: ${error.message}`);
+    }
+
+    state.plants = [normalizePlant(data), ...getPlants()];
+    state.formSuccess = "Карточка добавлена в коллекцию.";
+    state.formError = "";
+    state.isSubmittingPlant = false;
+    state.addFormOpen = false;
+    state.selectedPlantId = String(data.id);
+    updateCategoryTabs();
+    updateSidebarStats();
+    updateGrid();
+    updateLightbox();
+    updateAddPlantModal();
+  } catch (error) {
+    state.formError = error instanceof Error ? error.message : "Не удалось сохранить карточку.";
+    state.formSuccess = "";
+    state.isSubmittingPlant = false;
+    updateAddPlantModal();
+  }
+}
+
 function getFilteredPlants() {
   const query = state.searchQuery.toLowerCase();
 
-  return PLANTS.filter((plant) => {
+  return getPlants().filter((plant) => {
     const matchesCategory = state.activeCategory === "all" || plant.category === state.activeCategory;
     const matchesSearch =
       !query ||
       plant.name.toLowerCase().includes(query) ||
-      plant.latin.toLowerCase().includes(query);
+      plant.latin.toLowerCase().includes(query) ||
+      plant.locale.toLowerCase().includes(query);
 
     return matchesCategory && matchesSearch;
   });
 }
 
 function getSelectedPlant() {
-  return PLANTS.find((plant) => plant.id === state.selectedPlantId) || null;
+  return getPlants().find((plant) => plant.id === state.selectedPlantId) || null;
 }
 
 function getCategories() {
   return CATEGORY_DEFS.map((category) => {
     const count = category.id === "all"
-      ? PLANTS.length
-      : PLANTS.filter((plant) => plant.category === category.id).length;
+      ? getPlants().length
+      : getPlants().filter((plant) => plant.category === category.id).length;
 
     return { ...category, count };
   });
 }
 
 function getCollectionStats() {
-  const totalSpecimens = PLANTS.length;
-  const collectors = new Set(PLANTS.map((plant) => plant.collector.trim())).size;
-  const regions = new Set(PLANTS.map((plant) => plant.locale.trim())).size;
-  const sealed = PLANTS.filter((plant) => plant.hasWaxSeal).length;
+  const plants = getPlants();
+  const totalSpecimens = plants.length;
+  const collectors = new Set(plants.map((plant) => plant.collector.trim())).size;
+  const regions = new Set(plants.map((plant) => plant.locale.trim())).size;
+  const sealed = plants.filter((plant) => plant.hasWaxSeal).length;
 
   return {
     totalSpecimens,
@@ -440,6 +738,7 @@ function renderShell() {
     ${backgroundDecorationsMarkup()}
     <div id="lightboxMount"></div>
     <div id="addPlantMount"></div>
+    <div id="plantsLoadingNotice"></div>
     <div class="herbarium-wrapper">
       <header class="herb-header">
         <div class="corner-deco corner-deco-tl" aria-hidden="true">${cornerDecoMarkup()}</div>
@@ -534,7 +833,7 @@ function renderShell() {
         </svg>
       </footer>
     </div>
-    <div aria-hidden="true" style="position: fixed; left: 70px; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: space-evenly; align-items: center; pointer-events: none; z-index: 996; padding-top: 60px; padding-bottom: 60px; gap: 0;">
+    <div aria-hidden="true" style="position: fixed; left: 18px; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: space-evenly; align-items: center; pointer-events: none; z-index: 996; padding-top: 60px; padding-bottom: 60px; gap: 0;">
       <div style="width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid rgba(44,31,14,0.20); background: radial-gradient(ellipse, rgba(200,175,130,0.35) 0%, rgba(180,150,100,0.20) 100%); box-shadow: inset 0 1px 3px rgba(44,31,14,0.15); flex-shrink: 0;"></div>
       <div style="width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid rgba(44,31,14,0.20); background: radial-gradient(ellipse, rgba(200,175,130,0.35) 0%, rgba(180,150,100,0.20) 100%); box-shadow: inset 0 1px 3px rgba(44,31,14,0.15); flex-shrink: 0;"></div>
       <div style="width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid rgba(44,31,14,0.20); background: radial-gradient(ellipse, rgba(200,175,130,0.35) 0%, rgba(180,150,100,0.20) 100%); box-shadow: inset 0 1px 3px rgba(44,31,14,0.15); flex-shrink: 0;"></div>
@@ -542,7 +841,7 @@ function renderShell() {
       <div style="width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid rgba(44,31,14,0.20); background: radial-gradient(ellipse, rgba(200,175,130,0.35) 0%, rgba(180,150,100,0.20) 100%); box-shadow: inset 0 1px 3px rgba(44,31,14,0.15); flex-shrink: 0;"></div>
       <div style="width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid rgba(44,31,14,0.20); background: radial-gradient(ellipse, rgba(200,175,130,0.35) 0%, rgba(180,150,100,0.20) 100%); box-shadow: inset 0 1px 3px rgba(44,31,14,0.15); flex-shrink: 0;"></div>
     </div>
-    <div aria-hidden="true" style="position: fixed; left: 88px; top: 0; bottom: 0; width: 1px; background: linear-gradient(to bottom, transparent 5%, rgba(140,60,50,0.12) 20%, rgba(140,60,50,0.12) 80%, transparent 95%); pointer-events: none; z-index: 995;"></div>
+    <div aria-hidden="true" style="position: fixed; left: 36px; top: 0; bottom: 0; width: 1px; background: linear-gradient(to bottom, transparent 5%, rgba(140,60,50,0.12) 20%, rgba(140,60,50,0.12) 80%, transparent 95%); pointer-events: none; z-index: 995;"></div>
   `;
 }
 
@@ -599,6 +898,22 @@ function updateGrid() {
   gridMount.innerHTML = `<div class="plant-grid" role="list">${filteredPlants.map(renderPlantCard).join("")}</div>`;
 }
 
+function updateLoadingNotice() {
+  const mount = document.getElementById("plantsLoadingNotice");
+
+  if (!mount) {
+    return;
+  }
+
+  mount.innerHTML = state.isLoadingPlants
+    ? `
+      <div class="plants-loading-banner" role="status">
+        Загрузка растений...
+      </div>
+    `
+    : "";
+}
+
 function updateSidebarStats() {
   const stats = getCollectionStats();
 
@@ -639,11 +954,14 @@ function updateAddPlantModal() {
   const overlay = document.getElementById("addPlantOverlay");
   const closeButton = document.getElementById("addPlantClose");
   const closeSecondary = document.getElementById("addPlantCloseSecondary");
+  const form = document.getElementById("addPlantForm");
 
   if (overlay) {
     overlay.addEventListener("click", (event) => {
       if (event.target === overlay) {
         state.addFormOpen = false;
+        state.formError = "";
+        state.formSuccess = "";
         updateAddPlantModal();
       }
     });
@@ -652,6 +970,8 @@ function updateAddPlantModal() {
   if (closeButton) {
     closeButton.addEventListener("click", () => {
       state.addFormOpen = false;
+      state.formError = "";
+      state.formSuccess = "";
       updateAddPlantModal();
     });
   }
@@ -659,8 +979,14 @@ function updateAddPlantModal() {
   if (closeSecondary) {
     closeSecondary.addEventListener("click", () => {
       state.addFormOpen = false;
+      state.formError = "";
+      state.formSuccess = "";
       updateAddPlantModal();
     });
+  }
+
+  if (form) {
+    form.addEventListener("submit", handleAddPlantSubmit);
   }
 }
 
@@ -691,6 +1017,8 @@ function bindEvents() {
   });
 
   document.getElementById("openAddPlantButton").addEventListener("click", () => {
+    state.formError = "";
+    state.formSuccess = "";
     state.addFormOpen = true;
     updateAddPlantModal();
   });
@@ -733,7 +1061,7 @@ function bindEvents() {
       return;
     }
 
-    state.selectedPlantId = Number(card.dataset.plantId);
+    state.selectedPlantId = card.dataset.plantId;
     updateLightbox();
   });
 
@@ -743,7 +1071,7 @@ function bindEvents() {
       return;
     }
 
-    state.selectedPlantId = Number(card.dataset.plantId);
+    state.selectedPlantId = card.dataset.plantId;
     updateLightbox();
   });
 
@@ -767,6 +1095,8 @@ updateNavTabs();
 updateCategoryTabs();
 updateSidebarStats();
 updateGrid();
+updateLoadingNotice();
 updateLightbox();
 updateAddPlantModal();
 bindEvents();
+fetchPlants();
