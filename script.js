@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 const SUPABASE_URL = "https://yvadqomjkbjwngzfpegi.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_6-1pFX9O4f2BaiVQ3hkIig_lA1gp5Ch";
@@ -6,6 +6,8 @@ const SUPABASE_BUCKET = "plants-images";
 const TAPE_VARIANTS = ["tape-yellow", "tape-blue", "tape-green", "tape-pink", "tape-clear"];
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const SITE_LOGO_PATH = "./images/site-logo.jpeg";
+const CURRENT_YEAR = new Date().getFullYear();
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
@@ -1044,22 +1046,30 @@ function renderShell() {
       </div>
 
       <footer class="herb-footer">
-        <div class="footer-flourish" aria-hidden="true">✦ ✧ ✦</div>
-        <p class="footer-text">Цифровой Гербарий Приморского края — проект Дальневосточного федерального университета</p>
-        <p class="footer-edition"><em>Электронное издание &nbsp;·&nbsp; Гербарные образцы, полевые наблюдения и локальные данные по флоре региона</em></p>
-        <svg aria-hidden="true" viewBox="0 0 300 40" style="width: 280px; height: 36px; margin: 14px auto 0px; display: block; opacity: 0.18;" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M150 20 Q130 10 110 15 Q90 20 70 12 Q50 5 30 15 Q15 22 5 18" stroke="#5c4008" stroke-width="1"></path>
-          <path d="M150 20 Q170 10 190 15 Q210 20 230 12 Q250 5 270 15 Q285 22 295 18" stroke="#5c4008" stroke-width="1"></path>
-          <path d="M85 15 Q88 8 92 12" stroke="#5c4008" stroke-width="0.7"></path>
-          <path d="M105 13 Q108 5 113 10" stroke="#5c4008" stroke-width="0.7"></path>
-          <path d="M215 13 Q218 5 223 10" stroke="#5c4008" stroke-width="0.7"></path>
-          <path d="M235 15 Q238 8 242 12" stroke="#5c4008" stroke-width="0.7"></path>
-          <circle cx="150" cy="20" r="3" fill="#5c4008"></circle>
-          <path d="M144 20 Q147 14 150 20 Q153 14 156 20" stroke="#5c4008" stroke-width="0.8"></path>
-          <path d="M144 20 Q147 26 150 20 Q153 26 156 20" stroke="#5c4008" stroke-width="0.8"></path>
-          <ellipse cx="150" cy="11" rx="3" ry="5" stroke="#5c4008" stroke-width="0.8"></ellipse>
-          <ellipse cx="150" cy="29" rx="3" ry="5" stroke="#5c4008" stroke-width="0.8"></ellipse>
-        </svg>
+        <div class="footer-content">
+          <div class="header-logo-shell footer-logo-shell" aria-label="Логотип сайта">
+            <img class="header-logo-image" src="${SITE_LOGO_PATH}" alt="Логотип цифрового гербария" width="104" height="104" />
+          </div>
+          <div class="footer-copy">
+            <div class="footer-flourish" aria-hidden="true">✦ ✧ ✦</div>
+            <p class="footer-text">Цифровой Гербарий Приморского края — проект Дальневосточного федерального университета</p>
+            <p class="footer-edition"><em>Электронное издание &nbsp;·&nbsp; Гербарные образцы, полевые наблюдения и локальные данные по флоре региона</em></p>
+            <p class="footer-signature">created by <a href="https://github.com/AYUREVA" target="_blank" rel="noreferrer">YUREV</a> ${CURRENT_YEAR}</p>
+            <svg aria-hidden="true" viewBox="0 0 300 40" style="width: 280px; height: 36px; margin: 14px auto 0px; display: block; opacity: 0.18;" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M150 20 Q130 10 110 15 Q90 20 70 12 Q50 5 30 15 Q15 22 5 18" stroke="#5c4008" stroke-width="1"></path>
+              <path d="M150 20 Q170 10 190 15 Q210 20 230 12 Q250 5 270 15 Q285 22 295 18" stroke="#5c4008" stroke-width="1"></path>
+              <path d="M85 15 Q88 8 92 12" stroke="#5c4008" stroke-width="0.7"></path>
+              <path d="M105 13 Q108 5 113 10" stroke="#5c4008" stroke-width="0.7"></path>
+              <path d="M215 13 Q218 5 223 10" stroke="#5c4008" stroke-width="0.7"></path>
+              <path d="M235 15 Q238 8 242 12" stroke="#5c4008" stroke-width="0.7"></path>
+              <circle cx="150" cy="20" r="3" fill="#5c4008"></circle>
+              <path d="M144 20 Q147 14 150 20 Q153 14 156 20" stroke="#5c4008" stroke-width="0.8"></path>
+              <path d="M144 20 Q147 26 150 20 Q153 26 156 20" stroke="#5c4008" stroke-width="0.8"></path>
+              <ellipse cx="150" cy="11" rx="3" ry="5" stroke="#5c4008" stroke-width="0.8"></ellipse>
+              <ellipse cx="150" cy="29" rx="3" ry="5" stroke="#5c4008" stroke-width="0.8"></ellipse>
+            </svg>
+          </div>
+        </div>
       </footer>
     </div>
     <div aria-hidden="true" style="position: fixed; left: 18px; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: space-evenly; align-items: center; pointer-events: none; z-index: 996; padding-top: 60px; padding-bottom: 60px; gap: 0;">

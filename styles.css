@@ -210,6 +210,45 @@ body::after {
   border-bottom: none;
 }
 
+.header-logo-shell {
+  position: absolute;
+  z-index: 2;
+  width: clamp(74px, 9vw, 108px);
+  aspect-ratio: 1;
+  padding: 6px;
+  border-radius: 50%;
+  background:
+    linear-gradient(180deg, rgba(252, 247, 232, 0.96), rgba(236, 222, 188, 0.88)),
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.92), transparent 62%);
+  border: 1px solid rgba(139, 105, 20, 0.22);
+  box-shadow:
+    0 10px 20px rgba(44, 31, 14, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  backdrop-filter: blur(2px);
+}
+
+.header-logo-shell::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 1px dashed rgba(139, 105, 20, 0.28);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.header-logo-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  border-radius: 50%;
+  filter: drop-shadow(0 6px 10px rgba(44, 31, 14, 0.18));
+}
+
 /* Decorative ink line under header */
 .herb-header::after {
   content: '';
@@ -753,7 +792,7 @@ body::after {
 /* The polaroid white frame */
 .polaroid {
   background: #faf7f0;
-  padding: 10px 10px 42px;
+  padding: 10px 10px 56px;
   box-shadow:
     0 2px 4px rgba(44,31,14,0.12),
     0 6px 18px rgba(44,31,14,0.14),
@@ -795,13 +834,13 @@ body::after {
 .polaroid-caption {
   position: absolute;
   bottom: 0; left: 0; right: 0;
-  height: 42px;
+  min-height: 56px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 4px 8px 5px;
-  gap: 3px;
+  padding: 6px 8px 7px;
+  gap: 4px;
   overflow: hidden;
 }
 
@@ -813,6 +852,11 @@ body::after {
   text-align: center;
   line-height: 1.05;
   letter-spacing: 0.01em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 100%;
 }
 
 .polaroid-date {
@@ -980,7 +1024,7 @@ body::after {
    ============================================================ */
 .paper-tag {
   position: absolute;
-  bottom: -36px;
+  top: calc(100% - 10px);
   left: 50%;
   transform: translateX(-50%) rotate(-1.5deg);
   width: 80%;
@@ -1085,7 +1129,7 @@ body::after {
 .herb-footer {
   position: relative;
   text-align: center;
-  padding: 36px 20px 52px;
+  padding: 36px clamp(24px, 6vw, 72px) 52px;
   margin-top: 20px;
 }
 
@@ -1123,6 +1167,50 @@ body::after {
   color: var(--ink-lighter);
   opacity: 0.55;
   margin-top: 4px;
+}
+
+.footer-signature {
+  margin-top: 18px;
+  font-family: var(--font-handwriting);
+  font-size: clamp(1.2rem, 2.2vw, 1.55rem);
+  color: var(--ink-faded);
+  opacity: 0.88;
+}
+
+.footer-signature a {
+  color: var(--olive);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(90, 102, 50, 0.35);
+  transition: color 0.2s ease, border-color 0.2s ease, text-shadow 0.2s ease;
+}
+
+.footer-signature a:hover,
+.footer-signature a:focus-visible {
+  color: var(--sepia-dark);
+  border-color: rgba(92, 64, 8, 0.48);
+  text-shadow: 0 2px 6px rgba(139, 105, 20, 0.18);
+}
+
+.footer-content {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.footer-copy {
+  min-width: 0;
+}
+
+.footer-logo-shell {
+  position: relative;
+  left: auto;
+  bottom: auto;
+  width: clamp(68px, 7vw, 92px);
+  justify-self: start;
+  align-self: center;
 }
 
 /* ============================================================
@@ -1210,6 +1298,22 @@ body::after {
 
 @media (max-width: 500px) {
   .herb-header { padding: 32px 16px 24px; }
+  .herb-footer {
+    padding: 32px 16px 40px;
+  }
+  .footer-content {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 14px;
+  }
+  .footer-copy {
+    width: 100%;
+  }
+  .footer-logo-shell {
+    width: 68px;
+    justify-self: center;
+    align-self: center;
+  }
   .header-title { font-size: 2.2rem; }
   .plant-grid { gap: 48px 16px; }
   .herb-main-layout { padding: 12px 14px 30px; }
